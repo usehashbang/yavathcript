@@ -1,0 +1,29 @@
+<html>
+<head>
+    <title>Test Compiler</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="utility.js"></script>
+    <script src="find_end.js"></script>
+    <script src="compile.js"></script>
+    <script>
+        var scheme, js;
+        
+        function initialize() {
+            scheme = document.getElementById('scheme');
+            js = document.getElementById('js');
+        }
+
+        function go() {
+            js.value = window.compile(scheme.value);
+        }
+    
+    </script>
+</head>
+<body onload="initialize();">
+    <center>
+        <textarea id='scheme'>(define (f x) (* (+ x 1) (- x 1)))</textarea><br>
+        <button onclick="go();">Go!</button><br>
+        <textarea id='js'></textarea>
+    </center>
+</body>
+</html>

@@ -1,0 +1,6 @@
+textarea {          resize: none;
+                    font-family: droid mono sans, courier, fixedsys;
+                    font-size: 11pt;
+                    height: 300;
+                    width: 900;
+                    margin: 10px; }
