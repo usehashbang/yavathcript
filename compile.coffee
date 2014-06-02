@@ -10,18 +10,22 @@ define = (src) ->
 
     blocks = parse.blocks(src)
     params = parse.blocks(util.clean_up(blocks[0]))
-    suite = blocks[1]
 
     if params.length == 1                                                           # case: variable
         "var " + params[0] + " = " + compile(suite) + ";\n";
     else                                                                            # case: function
-        "function " + parse.func_and_args(params) + " {\n    return " + compile(suite) + ";\n}"
+        suite = parse.separate(blocks[1])
+        last_suite = suite.pop()
+        text = "function " + parse.func_and_args(params) + " {\n"
+        text = text + "    " + compile(x) + ";\n" for x in suite
+        text + "    return " + compile(last_suite) + ";\n}\n"
 
 
 
 call = (src) ->
     ### Takes something like "(f x_1 ... x_n)". ###
     parse.func_and_args(parse.blocks(util.clean_up(src)))
+
 
 
 arith = (op, args) ->

@@ -29,6 +29,7 @@ strip_leading_whitespace = (str) ->
 
 strip_outer_whitespace = (str) ->
     ### Removes whitespace from before and after string 'str'. ###
+    # note - str.trim() could be preferable
     strip_trailing_whitespace(strip_leading_whitespace(str))
 
 replace_all = (str, from, to) ->
@@ -44,6 +45,14 @@ clean_up = (str) ->
     ### Removes outer parentheses, outer whitespace, and trims inner whitespace. ###
     util.strip_outer_whitespace(util.trim_whitespace(util.strip_outer_parentheses(str)))
 
+count_leading_parentheses = (str) ->
+    ### Counts the number of '(' that occur before a non-whitespace , non '('
+        character. ###
+    [x, str] = [0, replace_all(trim_whitespace(str), " ", "")]
+    while str.substring(0, 1) == "("
+        [x, str] = [x + 1, str.substring(1)]
+    x
+
 window.util =
     strip_between : strip_between
     strip_outer_parentheses : strip_outer_parentheses
@@ -54,3 +63,4 @@ window.util =
     replace_all : replace_all
     trim_whitespace : trim_whitespace
     clean_up : clean_up
+    count_leading_parentheses : count_leading_parentheses

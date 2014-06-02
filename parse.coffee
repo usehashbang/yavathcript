@@ -61,9 +61,20 @@ func_and_args = (args) ->
 
 
 
+separate = (src) ->
+    ### Determines whether the case is (a b c) or ((a) (b) (c)), returning ['a b c']
+        in the former case, and ['(a)', '(b)', '(c)'] in the latter. ###
+    src = util.trim_whitespace(src)
+    switch util.count_leading_parentheses(src)
+        when 0 then ['(' + src + ')']
+        when 1 then [src]
+        else blocks(util.strip_outer_parentheses(src))
+
+
+
 window.parse =
     find_end : find_end
     arg_list : arg_list
     func_and_args : func_and_args
     blocks : blocks
-    
+    separate : separate
