@@ -35,11 +35,11 @@ blocks = (src) ->
     
     i = if src.substring(0, 1) == "(" then find_end(src) else src.indexOf(" ")      # find end of first block
     if i == -1                                                                      # if only one block
-        src = util.strip_outer_whitespace(src)                                      #   clean it up and
-        if src == "" then [] else [util.strip_outer_whitespace(src)]                #   return it
+        src = src.trim()                                                            #   clean it up and
+        if src == "" then [] else [src]                                             #   return it
     else                                                                            # otherwise
-        L = [util.strip_outer_whitespace(src.substring(0, i + 1))]                  #   make singleton list
-        L.concat(blocks(util.strip_outer_whitespace(src.substring(i + 1))))         #   and continue recursively
+        L = [src.substring(0, i + 1).trim()]                                        #   make singleton list
+        L.concat(blocks(src.substring(i + 1).trim()))                               #   and continue recursively
 
 
 
@@ -64,7 +64,7 @@ func_and_args = (args) ->
 separate = (src) ->
     ### Determines whether the case is (a b c) or ((a) (b) (c)), returning ['a b c']
         in the former case, and ['(a)', '(b)', '(c)'] in the latter. ###
-    src = util.trim_whitespace(src)
+    src = src.trim()
     switch util.count_leading_parentheses(src)
         when 0 then ['(' + src + ')']
         when 1 then [src]

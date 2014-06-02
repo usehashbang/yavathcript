@@ -45,7 +45,7 @@ arith = (op, args) ->
 if_statement = (src) ->
     ### Takes '(if x y z)' and gives 'x? y : z'. ###
     
-    blocks = parse.blocks(util.trim_whitespace(src))
+    blocks = parse.blocks(src.trim())
     "(" + compile(blocks[0]) + "? " + compile(blocks[1]) + " : " + compile(blocks[2]) + ")"
 
 
@@ -54,7 +54,7 @@ cond = (src) ->
     ### Takes '(cond (a b) ... (c d))' and gives an equivalent if/else,
         wrapped in an anonymous function. ###
 
-    blocks = parse.blocks(util.trim_whitespace(src))
+    blocks = parse.blocks(src.trim())
     text = "(function() {\n";
     
     for x in blocks
