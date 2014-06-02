@@ -21,7 +21,7 @@
 </head>
 <body onload="initialize();">
     <center>
-        <textarea id='scheme'>(define (f x) (* (+ x 1) (- x 1)))</textarea><br>
+        <textarea id='scheme'>(define (min x y) (cond ((< x y) x) (else y)))</textarea><br>
         <button onclick="go();">Go!</button><br>
         <textarea id='js'></textarea>
     </center>
