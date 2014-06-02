@@ -1,4 +1,6 @@
-### utility.coffee ###
+### file: utility.coffee
+    made: 5/31/2014
+    note: various utility functions; they are placed in window.util ###
 
 strip_between = (str, L, R) ->
     ### Removes anything in str contained between an L and an R. ###
