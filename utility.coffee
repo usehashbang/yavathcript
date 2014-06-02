@@ -38,7 +38,7 @@ replace_all = (str, from, to) ->
 
 trim_whitespace = (str) ->
     ### E.g. "\t\t \t\nasdf  asdf     " \mapsto " asdf asdf ". ###
-    replace_all(replace_all(replace_all(str, "\n", " "), "\t", " "), "  ", " ")
+    strip_outer_whitespace(replace_all(replace_all(replace_all(str, "\n", " "), "\t", " "), "  ", " "))
 
 clean_up = (str) ->
     ### Removes outer parentheses, outer whitespace, and trims inner whitespace. ###

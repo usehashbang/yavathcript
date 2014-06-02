@@ -46,7 +46,7 @@ define = (src) ->
     if params.length == 1                                                           # case: variable
         "var " + params[0] + " = " + compile(suite) + ";\n";
     else                                                                            # case: function
-        func_and_args(params) + " {\n    return " + compile(suite) + ";\n}"
+        "function " + func_and_args(params) + " {\n    return " + compile(suite) + ";\n}"
 
 
 
@@ -66,7 +66,34 @@ arith = (op, args) ->
         text = text + compile(arg) + ' ' + op + ' '
     
     text + compile(lastarg) + ')'
+
+
+
+if_statement = (src) ->
+    ### Takes '(if x y z)' and gives 'x? y : z'. ###
     
+    blocks = parse_blocks(util.trim_whitespace(src))
+    "(" + compile(blocks[0]) + "? " + compile(blocks[1]) + " : " + compile(blocks[2]) + ")"
+
+
+
+cond = (src) ->
+    ### Takes '(cond (a b) ... (c d))' and gives an equivalent if/else,
+        wrapped in an anonymous function. ###
+
+    blocks = parse_blocks(util.trim_whitespace(src))
+    text = "(function() {\n";
+    
+    for x in blocks
+        [pred, suite] = parse_blocks(util.clean_up(x))
+        text = text + "    "
+        if x != blocks[0]
+            text = text + "} else "
+        if pred != "else" and pred != "#t"
+            text = text + "if (" + compile(pred) + ") "
+        text = text + "{\n        return " + compile(suite) + ";\n"
+    text + "    }\n})()"
+        
 
 
 compile = (src) ->
@@ -80,7 +107,9 @@ compile = (src) ->
     else
         switch src.substring(0, n)
             when "define" then define(src.substring(n + 1))
-            when "*", "+", "-" then arith(src.substring(0, 1), src.substring(2, src.length))
+            when "*", "+", "-", "<", ">", ">=", "<=" then arith(src.substring(0, n), src.substring(n + 1, src.length))
+            when "if" then if_statement(src.substring(n + 1))
+            when "cond" then cond(src.substring(n + 1))
             else call(src)
 
 
