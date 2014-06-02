@@ -1,20 +1,26 @@
-### find_end.coffee ###
+### file: find_end.coffee
+    made: 5/31/2014
+    note: find_end finds the parenthesis in a string that closes a given
+          parenthesis ###
 
 parenthesis_iter = (str, level, index) ->
-    ### Finds the first instance of "(" or ")", whichever comes first, and returns
-        a list of the form [L[0] \pm 1, index], where we take + 1 for a left paren-
-        thesis and -1 for a right parenthesis. ###
+    ### Finds index of the first instance of "(" or ")", whichever comes first,
+        and returns a list of the form [level \pm 1, new_index].  Here \pm 1 is
+        1 if the the first parenthesis is an opener, and -1 if it is a closer. ###
+
     str = str.substring(index)
     [i, j] = [str.indexOf("("), str.indexOf(")")]
     if (i < j and i != -1) then [level + 1, index + i] else [level - 1, index + j]
 
+
+
 find_end = (str) ->
-    ### The first character of str should be a left parenthesis '('.  This
-        function will return the index of the closing parenthesis. ###
+    ### The first character of str should be a left parenthesis '('.  find_end
+        will return the index of the correspoding closing parenthesis. ###
     
-    # Strip away anything in between quotation marks (doubles first, then singles)
+    # Strip away anything contained in quotation marks
     src = util.strip_between(util.strip_between(str, "\"", "\""), "'", "'")
-    
+
     # Iterate through until the closing parenthesis is found
     [level, index] = [1, 0]
     while level != 0
