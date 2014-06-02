@@ -37,7 +37,7 @@ replace_all = (str, from, to) ->
     str
 
 trim_whitespace = (str) ->
-    ### E.g. "\t\t \t\nasdf  asdf     " \mapsto " asdf asdf ". ###
+    ### E.g. "\t\t \t\nasdf  asdf     " \mapsto "asdf asdf". ###
     strip_outer_whitespace(replace_all(replace_all(replace_all(str, "\n", " "), "\t", " "), "  ", " "))
 
 clean_up = (str) ->
