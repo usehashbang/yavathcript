@@ -78,6 +78,13 @@ is_function = (str) ->
 
 
 
+anon_wrap = (js_code) ->
+    ### Takes javascript 'js_code' and puts it in an anonymous wrapper, and calls
+        it.  E.g. '(function() { ' + js_code + ' })();'. ###
+    "(function() {\n" + js_code + "})()"
+
+
+
 window.parse =
     find_end : find_end
     arg_list : arg_list
@@ -85,3 +92,4 @@ window.parse =
     blocks : blocks
     separate : separate
     is_function : is_function
+    anon_wrap : anon_wrap

@@ -112,18 +112,43 @@ let_statement = (src) ->
     blocks = parse.blocks(src.trim())
     [x, a] = parse.blocks(util.strip_outer_parentheses(blocks[0].trim()))
     suite = blocks[1]
-    
-    ###compile('((lambda (' + x + ') ' + suite + ') ' + a + ')') - doesn't work yet ###
-    
-    text = '(function() {\nvar ' + x + ' = ' + compile(a) + ';\n' + multiple_lines_return(parse.separate(suite)) + '})()\n'
+    parse.anon_wrap('var ' + x + ' = ' + compile(a) + ';\n' + multiple_lines_return(parse.separate(suite)))
 
 
 
 set_statement = (src) ->
-    ### Takes '(x a)' and gives 'x = a;'. ###
+    ### Takes '(x a)' and gives 'x = a'. ###
 
     blocks = parse.blocks(src.trim())
     blocks[0] + ' = ' + compile(blocks[1].trim())
+
+
+
+do_loop = (src) ->
+    ### It's complicated... ###
+
+    [bindings, clause, body] = parse.blocks(src.trim())
+    [bindings, body] = [parse.blocks(util.strip_outer_parentheses(bindings.trim())), parse.separate(body.trim())]
+    [init, update] = [[], []]
+    
+    y = parse.separate(clause.trim())
+    y.push('undefined')
+    [test, return_expression] = [y[0], y[1]]
+    
+    for x in bindings
+        [name, value, step] = parse.blocks(util.clean_up(x))
+        init.push(name + ' = ' + compile(value))
+        update.push(name + ' = ' + compile(step))
+        
+    init[0] = 'var ' + init[0]
+    text = "for(" + util.strip_outer_parentheses(parse.arg_list(init)) + "; "
+    text += "!(" + compile(test) + "); "
+    text += util.strip_outer_parentheses(parse.arg_list(update)) + ") {\n"
+    text += multiple_lines(body) + "}\nreturn " + compile(return_expression) + ";\n"
+    
+    parse.anon_wrap(text)
+    
+    
 
 
 
@@ -139,18 +164,20 @@ compile = (src) ->
             when "#f" then "false"
             else src
     else
-        switch src.substring(0, n)
-            when "define" then define(src.substring(n + 1))
-            when "*", "+", "-" then arith(src.substring(0, n), src.substring(n + 1))
-            when "and" then arith('&&', src.substring(n + 1))
-            when "or" then arith('||', src.substring(n + 1))
-            when "<", ">", ">=", "<=" then compare(src.substring(0, n), src.substring(n + 1))
-            when "=", "==" then compare("==", src.substring(n + 1))
-            when "if" then if_statement(src.substring(n + 1))
-            when "cond" then cond(src.substring(n + 1))
-            when "lambda" then lambda(src.substring(n + 1))
-            when "let" then let_statement(src.substring(n + 1))
-            when "set!" then set_statement(src.substring(n + 1))
+        [first, rest] = [src.substring(0, n), src.substring(n + 1)]
+        switch first
+            when "define" then define(rest)
+            when "*", "+", "-" then arith(first, rest)
+            when "and" then arith('&&', rest)
+            when "or" then arith('||', rest)
+            when "<", ">", ">=", "<=" then compare(first, rest)
+            when "=", "==" then compare("==", rest)
+            when "if" then if_statement(rest)
+            when "cond" then cond(rest)
+            when "lambda" then lambda(rest)
+            when "let" then let_statement(rest)
+            when "set!" then set_statement(rest)
+            when "do" then do_loop(rest)
             else call(src)
 
 
