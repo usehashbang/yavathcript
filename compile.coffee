@@ -126,7 +126,10 @@ compile = (src) ->
     n = src.indexOf(' ')
 
     if n == -1      # src is a literal
-        src
+        switch src
+            when "#t" then "true"
+            when "#f" then "false"
+            else src
     else
         switch src.substring(0, n)
             when "define" then define(src.substring(n + 1))
