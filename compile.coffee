@@ -22,14 +22,14 @@ define = (src) ->
         { return stuffs; }", or takes "(define x 3)" and gives "var x = 3;". ###
 
     blocks = parse.blocks(src)
-    params = parse.blocks(util.clean_up(blocks[0]))
     suite = blocks[1].trim()
 
-    if params.length == 1                                                           # case: variable
-        "var " + params[0] + " = " + compile(suite) + ";\n";
-    else                                                                            # case: function
+    if parse.is_function(src)
+        params = parse.blocks(util.clean_up(blocks[0]))
         text = "function " + parse.func_and_args(params) + " {\n"
         text + multiple_lines_return(parse.separate(suite)) + "}\n"
+    else
+        "var " + blocks[0] + " = " + compile(suite) + ";\n";
 
 
 
