@@ -102,7 +102,7 @@ let_statement = (src) ->
     
     ###compile('((lambda (' + x + ') ' + suite + ') ' + a + ')') - doesn't work yet ###
     
-    text = '(function() { var ' + x + ' = ' + a + ';\n' + multiple_lines_return(parse.separate(suite)) + '})()\n'
+    text = '(function() {\nvar ' + x + ' = ' + compile(a) + ';\n' + multiple_lines_return(parse.separate(suite)) + '})()\n'
         
 
 
