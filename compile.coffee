@@ -4,21 +4,32 @@
 
 
 
+multiple_lines = (src) ->
+    ### Takes ['a', ..., 'b'] to 'compile(a);\n...compile(b);\n'. ###
+    if src.length == 0 then '' else compile(src[0]) + ';\n' + multiple_lines(src.splice(1))
+
+
+
+multiple_lines_return = (src) ->
+    ### Same as multiple_lines, but last line is a return statement. ###
+    last_src = src.pop()
+    multiple_lines(src) + 'return ' + compile(last_src) + ';\n'
+
+
+
 define = (src) ->
     ### Takes "(define (f x_1 ... x_n) (stuffs))" and gives "function f(x_1, ..., x_n)
         { return stuffs; }", or takes "(define x 3)" and gives "var x = 3;". ###
 
     blocks = parse.blocks(src)
     params = parse.blocks(util.clean_up(blocks[0]))
+    suite = blocks[1].trim()
 
     if params.length == 1                                                           # case: variable
         "var " + params[0] + " = " + compile(suite) + ";\n";
     else                                                                            # case: function
-        suite = parse.separate(blocks[1])
-        last_suite = suite.pop()
         text = "function " + parse.func_and_args(params) + " {\n"
-        text = text + "    " + compile(x) + ";\n" for x in suite
-        text + "    return " + compile(last_suite) + ";\n}\n"
+        text + multiple_lines_return(parse.separate(suite)) + "}\n"
 
 
 
@@ -66,6 +77,32 @@ cond = (src) ->
             text = text + "if (" + compile(pred) + ") "
         text = text + "{\n        return " + compile(suite) + ";\n"
     text + "    }\n})()"
+
+
+
+lambda = (src) ->
+    ### Takes '(x ... z) (suite)' and gives a lambda, i.e. anonymous js
+        function 'function(x, ..., z) { compile(suite); }'. ###
+
+    blocks = parse.blocks(src.trim())
+    args = parse.blocks(util.strip_outer_parentheses(blocks[0].trim()))
+    suite = parse.separate(blocks[1].trim())
+    args.splice(0, 0, 'function')
+    parse.func_and_args(args) + ' {\n' + multiple_lines_return(suite) + '}\n'
+
+
+
+let_statement = (src) ->
+    ### Takes '(x a) (suite)' and gives the result of compile applied to
+        '((lambda (x) (suite)) a)'. ###
+
+    blocks = parse.blocks(src.trim())
+    [x, a] = parse.blocks(util.strip_outer_parentheses(blocks[0].trim()))
+    suite = blocks[1]
+    
+    ###compile('((lambda (' + x + ') ' + suite + ') ' + a + ')') - doesn't work yet ###
+    
+    text = '(function() { var ' + x + ' = ' + a + ';\n' + multiple_lines_return(parse.separate(suite)) + '})()\n'
         
 
 
@@ -83,6 +120,8 @@ compile = (src) ->
             when "*", "+", "-", "<", ">", ">=", "<=" then arith(src.substring(0, n), src.substring(n + 1, src.length))
             when "if" then if_statement(src.substring(n + 1))
             when "cond" then cond(src.substring(n + 1))
+            when "lambda" then lambda(src.substring(n + 1))
+            when "let" then let_statement(src.substring(n + 1))
             else call(src)
 
 
