@@ -116,7 +116,15 @@ let_statement = (src) ->
     ###compile('((lambda (' + x + ') ' + suite + ') ' + a + ')') - doesn't work yet ###
     
     text = '(function() {\nvar ' + x + ' = ' + compile(a) + ';\n' + multiple_lines_return(parse.separate(suite)) + '})()\n'
-        
+
+
+
+set_statement = (src) ->
+    ### Takes '(x a)' and gives 'x = a;'. ###
+
+    blocks = parse.blocks(src.trim())
+    blocks[0] + ' = ' + compile(blocks[1].trim())
+
 
 
 compile = (src) ->
@@ -142,6 +150,7 @@ compile = (src) ->
             when "cond" then cond(src.substring(n + 1))
             when "lambda" then lambda(src.substring(n + 1))
             when "let" then let_statement(src.substring(n + 1))
+            when "set!" then set_statement(src.substring(n + 1))
             else call(src)
 
 
