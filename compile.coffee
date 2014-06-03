@@ -53,6 +53,19 @@ arith = (op, args) ->
 
 
 
+compare = (op, args) ->
+    ### Turns '(<= x_1 ... x_n)' into '(x_1 <= x_2) && ... && (x_{n-1} <= x_n)'. ###
+
+    blocks = parse.blocks(args.trim())
+    if blocks.length > 2
+        text = '(and '
+        text += '(' + op + ' ' + blocks[i] + ' ' + blocks[i + 1] + ') ' for i in [0 .. (blocks.length - 2)]
+        compile(text + ')')
+    else
+        arith(op, args)
+
+
+
 if_statement = (src) ->
     ### Takes '(if x y z)' and gives 'x? y : z'. ###
     
@@ -117,7 +130,10 @@ compile = (src) ->
     else
         switch src.substring(0, n)
             when "define" then define(src.substring(n + 1))
-            when "*", "+", "-", "<", ">", ">=", "<=" then arith(src.substring(0, n), src.substring(n + 1, src.length))
+            when "*", "+", "-" then arith(src.substring(0, n), src.substring(n + 1, src.length))
+            when "and" then arith('&&', src.substring(n + 1, src.length))
+            when "or" then arith('||', src.substring(n + 1, src.length))
+            when "<", ">", ">=", "<=" then compare(src.substring(0, n), src.substring(n + 1, src.length))
             when "if" then if_statement(src.substring(n + 1))
             when "cond" then cond(src.substring(n + 1))
             when "lambda" then lambda(src.substring(n + 1))
