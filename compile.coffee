@@ -105,19 +105,30 @@ lambda = (src) ->
 
 
 
-let_statement = (src) ->
+let_statement = (src, star) ->
     ### Takes '(x a) (suite)' and gives the result of compile applied to
         '((lambda (x) (suite)) a)'. ###
 
-    [blocks, text] = [parse.blocks(src.trim()), '']
-    if util.count_leading_parentheses(blocks[0]) == 2
-        blocks[0] = util.strip_outer_parentheses(blocks[0].trim())
-    [bindings, suite] = [parse.blocks(blocks[0]), blocks[1]]
-    for binds in bindings
-        [x, a] = parse.blocks(util.strip_outer_parentheses(binds.trim()))
-        text = text + 'var ' + x + ' = ' + compile(a) + ';\n'
+    [blocks, text_1, text_2, text_3] = [parse.blocks(src.trim()), 'var ', '', '']
+    blocks[0] = util.strip_outer_parentheses(blocks[0].trim()) if util.count_leading_parentheses(blocks[0]) == 2
+    [bindings, suite, i, temp_var] = [parse.blocks(blocks[0]), blocks[1], 0, 'temp']
+
+    for bind in bindings
+        is_last = (bind == util.last(bindings))
+        [x, a] = parse.blocks(util.strip_outer_parentheses(bind.trim()))
+        text_1 += x + if is_last then ';\n' else ', '
+        if star
+            text_3 += x + ' = ' + compile(a) + ';\n'
+        else
+            text_2 += compile(a) + if is_last then '];\n' else ', '
+            text_3 += x + ' = !@#$%[' + i + if is_last then '];\n' else '], '
+        i += 1
+        temp_var = '_' + temp_var while x.indexOf(temp_var) != -1
+
     suite = blocks[1]
-    parse.anon_wrap(text + multiple_lines_return(parse.separate(suite)))
+    text_2 = 'var ' + temp_var + ' = [' + text_2 if not star
+    text_3 = util.replace_all(text_3, '!@#$%', temp_var)
+    parse.anon_wrap(text_1 + text_2 + text_3 + multiple_lines_return(parse.separate(suite)))
 
 
 
@@ -180,11 +191,27 @@ compile = (src) ->
             when "if" then if_statement(rest)
             when "cond" then cond(rest)
             when "lambda" then lambda(rest)
-            when "let" then let_statement(rest)
+            when "let" then let_statement(rest, false)
+            when "let*" then let_statement(rest, true)
             when "set!" then set_statement(rest)
             when "do" then do_loop(rest)
             else call(src)
 
 
 
+compile_plural = (src) ->
+    ### Performs a compile for whole program. ###
+    
+    if util.count_leading_parentheses(src) == 1
+        compile(src)
+    else
+        [src, code] = [parse.blocks(util.clean_up(src)), '']
+        for line in src
+            code += compile(line)
+            code += if code.substring(code.length - 1) == '}' then '\n\n' else ';\n\n'
+        code
+
+
+
 window.compile = compile
+window.compile_plural = compile_plural

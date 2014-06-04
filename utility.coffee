@@ -32,9 +32,14 @@ count_leading_parentheses = (str) ->
         [x, str] = [x + 1, str.substring(1)]
     x
 
+last = (L) ->
+    ### Returns the last element of a list. ###
+    L[L.length - 1]
+
 window.util =
     strip_between : strip_between
     strip_outer_parentheses : strip_outer_parentheses
     replace_all : replace_all
     clean_up : clean_up
     count_leading_parentheses : count_leading_parentheses
+    last : last
