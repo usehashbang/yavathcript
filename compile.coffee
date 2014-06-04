@@ -109,10 +109,15 @@ let_statement = (src) ->
     ### Takes '(x a) (suite)' and gives the result of compile applied to
         '((lambda (x) (suite)) a)'. ###
 
-    blocks = parse.blocks(src.trim())
-    [x, a] = parse.blocks(util.strip_outer_parentheses(blocks[0].trim()))
+    [blocks, text] = [parse.blocks(src.trim()), '']
+    if util.count_leading_parentheses(blocks[0]) == 2
+        blocks[0] = util.strip_outer_parentheses(blocks[0].trim())
+    [bindings, suite] = [parse.blocks(blocks[0]), blocks[1]]
+    for binds in bindings
+        [x, a] = parse.blocks(util.strip_outer_parentheses(binds.trim()))
+        text = text + 'var ' + x + ' = ' + compile(a) + ';\n'
     suite = blocks[1]
-    parse.anon_wrap('var ' + x + ' = ' + compile(a) + ';\n' + multiple_lines_return(parse.separate(suite)))
+    parse.anon_wrap(text + multiple_lines_return(parse.separate(suite)))
 
 
 
