@@ -50,8 +50,8 @@ arg_list = (args) ->
     innerargs = args.splice(0, args.length - 1)
     text = "("
     for x in innerargs
-        text = text + x + ", "    
-    text + lastarg + ")"
+        text = text + compile(x) + ", "    
+    text + compile(lastarg) + ")"
 
 
 
