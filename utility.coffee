@@ -13,7 +13,7 @@ strip_between = (str, L, R) ->
 
 strip_outer_parentheses = (str) ->
     ### Your classes "(asdf)" to "asdf" function. Works like a charm. ###
-    if str.substring(0, 1) == "(" then str.substring(1, str.length - 1) else str
+    if (str.substring(0, 1) != "(" or parse.find_end(str) != (str.length - 1)) then str else str.substring(1, str.length - 1)
 
 replace_all = (str, from, to) ->
     ### Replaces all instances of 'from' with 'to'. ###
@@ -32,9 +32,14 @@ count_leading_parentheses = (str) ->
         [x, str] = [x + 1, str.substring(1)]
     x
 
+last = (L) ->
+    ### Returns the last element of a list. ###
+    L[L.length - 1]
+
 window.util =
     strip_between : strip_between
     strip_outer_parentheses : strip_outer_parentheses
     replace_all : replace_all
     clean_up : clean_up
     count_leading_parentheses : count_leading_parentheses
+    last : last

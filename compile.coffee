@@ -4,21 +4,32 @@
 
 
 
+multiple_lines = (src) ->
+    ### Takes ['a', ..., 'b'] to 'compile(a);\n...compile(b);\n'. ###
+    if src.length == 0 then '' else compile(src[0]) + ';\n' + multiple_lines(src.splice(1))
+
+
+
+multiple_lines_return = (src) ->
+    ### Same as multiple_lines, but last line is a return statement. ###
+    last_src = src.pop()
+    multiple_lines(src) + 'return ' + compile(last_src) + ';\n'
+
+
+
 define = (src) ->
     ### Takes "(define (f x_1 ... x_n) (stuffs))" and gives "function f(x_1, ..., x_n)
         { return stuffs; }", or takes "(define x 3)" and gives "var x = 3;". ###
 
     blocks = parse.blocks(src)
-    params = parse.blocks(util.clean_up(blocks[0]))
+    suite = blocks[1].trim()
 
-    if params.length == 1                                                           # case: variable
-        "var " + params[0] + " = " + compile(suite) + ";\n";
-    else                                                                            # case: function
-        suite = parse.separate(blocks[1])
-        last_suite = suite.pop()
+    if parse.is_function(src)
+        params = parse.blocks(util.clean_up(blocks[0]))
         text = "function " + parse.func_and_args(params) + " {\n"
-        text = text + "    " + compile(x) + ";\n" for x in suite
-        text + "    return " + compile(last_suite) + ";\n}\n"
+        text + multiple_lines_return(parse.separate(suite)) + "}\n"
+    else
+        "var " + blocks[0] + " = " + compile(suite) + ";\n";
 
 
 
@@ -39,6 +50,19 @@ arith = (op, args) ->
         text = text + compile(arg) + ' ' + op + ' '
     
     text + compile(lastarg) + ')'
+
+
+
+compare = (op, args) ->
+    ### Turns '(<= x_1 ... x_n)' into '(x_1 <= x_2) && ... && (x_{n-1} <= x_n)'. ###
+
+    blocks = parse.blocks(args.trim())
+    if blocks.length > 2
+        text = '(and '
+        text += '(' + op + ' ' + blocks[i] + ' ' + blocks[i + 1] + ') ' for i in [0 .. (blocks.length - 2)]
+        compile(text + ')')
+    else
+        arith(op, args)
 
 
 
@@ -66,7 +90,82 @@ cond = (src) ->
             text = text + "if (" + compile(pred) + ") "
         text = text + "{\n        return " + compile(suite) + ";\n"
     text + "    }\n})()"
+
+
+
+lambda = (src) ->
+    ### Takes '(x ... z) (suite)' and gives a lambda, i.e. anonymous js
+        function 'function(x, ..., z) { compile(suite); }'. ###
+
+    blocks = parse.blocks(src.trim())
+    args = parse.blocks(util.strip_outer_parentheses(blocks[0].trim()))
+    suite = parse.separate(blocks[1].trim())
+    args.splice(0, 0, 'function')
+    parse.func_and_args(args) + ' {\n' + multiple_lines_return(suite) + '}\n'
+
+
+
+let_statement = (src, star) ->
+    ### Takes '(x a) (suite)' and gives the result of compile applied to
+        '((lambda (x) (suite)) a)'. ###
+
+    [blocks, text_1, text_2, text_3] = [parse.blocks(src.trim()), 'var ', '', '']
+    blocks[0] = util.strip_outer_parentheses(blocks[0].trim()) if util.count_leading_parentheses(blocks[0]) == 2
+    [bindings, suite, i, temp_var] = [parse.blocks(blocks[0]), blocks[1], 0, 'temp']
+
+    for bind in bindings
+        is_last = (bind == util.last(bindings))
+        [x, a] = parse.blocks(util.strip_outer_parentheses(bind.trim()))
+        text_1 += x + if is_last then ';\n' else ', '
+        if star
+            text_3 += x + ' = ' + compile(a) + ';\n'
+        else
+            text_2 += compile(a) + if is_last then '];\n' else ', '
+            text_3 += x + ' = !@#$%[' + i + if is_last then '];\n' else '], '
+        i += 1
+        temp_var = '_' + temp_var while x.indexOf(temp_var) != -1
+
+    suite = blocks[1]
+    text_2 = 'var ' + temp_var + ' = [' + text_2 if not star
+    text_3 = util.replace_all(text_3, '!@#$%', temp_var)
+    parse.anon_wrap(text_1 + text_2 + text_3 + multiple_lines_return(parse.separate(suite)))
+
+
+
+set_statement = (src) ->
+    ### Takes '(x a)' and gives 'x = a'. ###
+
+    blocks = parse.blocks(src.trim())
+    blocks[0] + ' = ' + compile(blocks[1].trim())
+
+
+
+do_loop = (src) ->
+    ### It's complicated... ###
+
+    [bindings, clause, body] = parse.blocks(src.trim())
+    [bindings, body] = [parse.blocks(util.strip_outer_parentheses(bindings.trim())), parse.separate(body.trim())]
+    [init, update] = [[], []]
+    
+    y = parse.separate(clause.trim())
+    y.push('undefined')
+    [test, return_expression] = [y[0], y[1]]
+    
+    for x in bindings
+        [name, value, step] = parse.blocks(util.clean_up(x))
+        init.push(name + ' = ' + compile(value))
+        update.push(name + ' = ' + compile(step))
         
+    init[0] = 'var ' + init[0]
+    text = "for(" + util.strip_outer_parentheses(parse.arg_list(init)) + "; "
+    text += "!(" + compile(test) + "); "
+    text += util.strip_outer_parentheses(parse.arg_list(update)) + ") {\n"
+    text += multiple_lines(body) + "}\nreturn " + compile(return_expression) + ";\n"
+    
+    parse.anon_wrap(text)
+    
+    
+
 
 
 compile = (src) ->
@@ -76,15 +175,43 @@ compile = (src) ->
     n = src.indexOf(' ')
 
     if n == -1      # src is a literal
-        src
+        switch src
+            when "#t" then "true"
+            when "#f" then "false"
+            else src
     else
-        switch src.substring(0, n)
-            when "define" then define(src.substring(n + 1))
-            when "*", "+", "-", "<", ">", ">=", "<=" then arith(src.substring(0, n), src.substring(n + 1, src.length))
-            when "if" then if_statement(src.substring(n + 1))
-            when "cond" then cond(src.substring(n + 1))
+        [first, rest] = [src.substring(0, n), src.substring(n + 1)]
+        switch first
+            when "define" then define(rest)
+            when "*", "+", "-" then arith(first, rest)
+            when "and" then arith('&&', rest)
+            when "or" then arith('||', rest)
+            when "<", ">", ">=", "<=" then compare(first, rest)
+            when "=", "==" then compare("==", rest)
+            when "if" then if_statement(rest)
+            when "cond" then cond(rest)
+            when "lambda" then lambda(rest)
+            when "let" then let_statement(rest, false)
+            when "let*" then let_statement(rest, true)
+            when "set!" then set_statement(rest)
+            when "do" then do_loop(rest)
             else call(src)
 
 
 
+compile_plural = (src) ->
+    ### Performs a compile for whole program. ###
+    
+    if util.count_leading_parentheses(src) == 1
+        compile(src)
+    else
+        [src, code] = [parse.blocks(util.clean_up(src)), '']
+        for line in src
+            code += compile(line)
+            code += if code.substring(code.length - 1) == '}' then '\n\n' else ';\n\n'
+        code
+
+
+
 window.compile = compile
+window.compile_plural = compile_plural

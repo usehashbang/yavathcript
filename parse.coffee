@@ -46,12 +46,12 @@ blocks = (src) ->
 arg_list = (args) ->
     ### Takes something like ['x_1', ..., 'x_n'] and gives "(x_1, ..., x_n)". ###
     
-    lastarg = args[args.length - 1]
+    lastarg = if args.length > 0 then args[args.length - 1] else ''
     innerargs = args.splice(0, args.length - 1)
     text = "("
     for x in innerargs
-        text = text + x + ", "    
-    text + lastarg + ")"
+        text = text + compile(x) + ", "    
+    text + compile(lastarg) + ")"
 
 
 
@@ -72,9 +72,24 @@ separate = (src) ->
 
 
 
+is_function = (str) ->
+    ### Simply returns true if the first character is a parenthesis. ###
+    str.substring(0, 1) == "("
+
+
+
+anon_wrap = (js_code) ->
+    ### Takes javascript 'js_code' and puts it in an anonymous wrapper, and calls
+        it.  E.g. '(function() { ' + js_code + ' })();'. ###
+    "(function() {\n" + js_code + "})()"
+
+
+
 window.parse =
     find_end : find_end
     arg_list : arg_list
     func_and_args : func_and_args
     blocks : blocks
     separate : separate
+    is_function : is_function
+    anon_wrap : anon_wrap
