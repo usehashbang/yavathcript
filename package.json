@@ -1,0 +1,11 @@
+{
+  "name": "yavathcript",
+  "version": "0.0.1",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "uglify-js": "2.x",
+    "less": "git://github.com/cloudhead/less.js"
+  }
+}
