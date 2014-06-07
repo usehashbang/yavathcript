@@ -22,7 +22,7 @@ replace_all = (str, from, to) ->
 
 clean_up = (str) ->
     ### Removes outer parentheses, outer whitespace, and trims inner whitespace. ###
-    (util.strip_outer_parentheses(str.trim())).trim()
+    (strip_outer_parentheses(str.trim())).trim()
 
 count_leading_parentheses = (str) ->
     ### Counts the number of '(' that occur before a non-whitespace , non '('

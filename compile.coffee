@@ -4,19 +4,6 @@
 
 
 
-multiple_lines = (src) ->
-    ### Takes ['a', ..., 'b'] to 'compile(a);\n...compile(b);\n'. ###
-    if src.length == 0 then '' else compile(src[0]) + ';\n' + multiple_lines(src.splice(1))
-
-
-
-multiple_lines_return = (src) ->
-    ### Same as multiple_lines, but last line is a return statement. ###
-    last_src = src.pop()
-    multiple_lines(src) + 'return ' + compile(last_src) + ';\n'
-
-
-
 define = (src) ->
     ### Takes "(define (f x_1 ... x_n) (stuffs))" and gives "function f(x_1, ..., x_n)
         { return stuffs; }", or takes "(define x 3)" and gives "var x = 3;". ###
@@ -27,7 +14,7 @@ define = (src) ->
     if parse.is_function(src)
         params = parse.blocks(util.clean_up(blocks[0]))
         text = "function " + parse.func_and_args(params) + " {\n"
-        text + multiple_lines_return(parse.separate(suite)) + "}\n"
+        text + 'return ' + compile(suite) + ";\n}\n"
     else
         "var " + blocks[0] + " = " + compile(suite) + ";\n";
 
@@ -41,14 +28,14 @@ call = (src) ->
 
 arith = (op, args) ->
     ### Handles the case of (* x_1 ... x_n), etc. ###
-    
+
     args = parse.blocks(args)
     lastarg = args[args.length - 1]
     text = '('
-    
+
     for arg in args.splice(0, args.length - 1)
         text = text + compile(arg) + ' ' + op + ' '
-    
+
     text + compile(lastarg) + ')'
 
 
@@ -68,7 +55,7 @@ compare = (op, args) ->
 
 if_statement = (src) ->
     ### Takes '(if x y z)' and gives 'x? y : z'. ###
-    
+
     blocks = parse.blocks(src.trim())
     "(" + compile(blocks[0]) + "? " + compile(blocks[1]) + " : " + compile(blocks[2]) + ")"
 
@@ -80,7 +67,7 @@ cond = (src) ->
 
     blocks = parse.blocks(src.trim())
     text = "(function() {\n";
-    
+
     for x in blocks
         [pred, suite] = parse.blocks(util.clean_up(x))
         text = text + "    "
@@ -99,9 +86,9 @@ lambda = (src) ->
 
     blocks = parse.blocks(src.trim())
     args = parse.blocks(util.strip_outer_parentheses(blocks[0].trim()))
-    suite = parse.separate(blocks[1].trim())
+    suite = blocks[1].trim()
     args.splice(0, 0, 'function')
-    parse.func_and_args(args) + ' {\n' + multiple_lines_return(suite) + '}\n'
+    parse.func_and_args(args) + ' {\nreturn ' + compile(suite) + ';\n}\n'
 
 
 
@@ -128,7 +115,7 @@ let_statement = (src, star) ->
     suite = blocks[1]
     text_2 = 'var ' + temp_var + ' = [' + text_2 if not star
     text_3 = util.replace_all(text_3, '!@#$%', temp_var)
-    parse.anon_wrap(text_1 + text_2 + text_3 + multiple_lines_return(parse.separate(suite)))
+    parse.anon_wrap(text_1 + text_2 + text_3 + 'return ' + compile(suite))
 
 
 
@@ -143,44 +130,43 @@ set_statement = (src) ->
 do_loop = (src) ->
     ### It's complicated... ###
 
-    [bindings, clause, body] = parse.blocks(src.trim())
-    [bindings, body] = [parse.blocks(util.strip_outer_parentheses(bindings.trim())), parse.separate(body.trim())]
-    [init, update] = [[], []]
-    
+    [bindings, clause, suite] = parse.blocks(src.trim())
+    [bindings, init, update] = [parse.blocks(util.clean_up(bindings)), [], []]
+
     y = parse.separate(clause.trim())
     y.push('undefined')
     [test, return_expression] = [y[0], y[1]]
-    
+
     for x in bindings
         [name, value, step] = parse.blocks(util.clean_up(x))
         init.push(name + ' = ' + compile(value))
         update.push(name + ' = ' + compile(step))
-        
+
     init[0] = 'var ' + init[0]
-    text = "for(" + util.strip_outer_parentheses(parse.arg_list(init)) + "; "
+    text = "for(" + util.strip_outer_parentheses(parse.arg_list_verb(init)) + "; "
     text += "!(" + compile(test) + "); "
-    text += util.strip_outer_parentheses(parse.arg_list(update)) + ") {\n"
-    text += multiple_lines(body) + "}\nreturn " + compile(return_expression) + ";\n"
-    
+    text += util.strip_outer_parentheses(parse.arg_list_verb(update)) + ") {\n"
+    text += compile(suite) + "}\nreturn " + compile(return_expression) + ";\n"
+
     parse.anon_wrap(text)
-    
-    
+
+
 
 
 
 compile = (src) ->
     ### The main compiling function. ###
 
-    src = util.clean_up(src)
-    n = src.indexOf(' ')
+    src = util.clean_up(src)                                                    # remove parentheses and whitespace
+    n = parse.find_end(src)                                                     # find the end of the first block
 
-    if n == -1      # src is a literal
+    if n == src.length - 1                                                      # src is a literal
         switch src
             when "#t" then "true"
             when "#f" then "false"
             else src
-    else
-        [first, rest] = [src.substring(0, n), src.substring(n + 1)]
+    else                                                                        # src is a function
+        [first, rest] = [src.substring(0,n+1), src.substring(n+1).trim()]
         switch first
             when "define" then define(rest)
             when "*", "+", "-" then arith(first, rest)
@@ -199,19 +185,4 @@ compile = (src) ->
 
 
 
-compile_plural = (src) ->
-    ### Performs a compile for whole program. ###
-    
-    if util.count_leading_parentheses(src) == 1
-        compile(src)
-    else
-        [src, code] = [parse.blocks(util.clean_up(src)), '']
-        for line in src
-            code += compile(line)
-            code += if code.substring(code.length - 1) == '}' then '\n\n' else ';\n\n'
-        code
-
-
-
 window.compile = compile
-window.compile_plural = compile_plural
