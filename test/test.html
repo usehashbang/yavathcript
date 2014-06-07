@@ -1,13 +1,13 @@
 <html>
 <head>
     <title>Test Compiler</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <script src="utility.js"></script>
-    <script src="parse.js"></script>
-    <script src="compile.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
+    <script src="../build/utility.js"></script>
+    <script src="../build/parse.js"></script>
+    <script src="../build/compile.js"></script>
     <script>
         var scheme, js;
-        
+
         function initialize() {
             scheme = document.getElementById('scheme');
             js = document.getElementById('js');
@@ -16,7 +16,7 @@
         function go() {
             js.value = window.compile(scheme.value);
         }
-    
+
     </script>
 </head>
 <body onload="initialize();">
