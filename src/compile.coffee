@@ -185,4 +185,21 @@ compile = (src) ->
 
 
 
+compile_blocks = (blocks) ->
+    ### Takes a list of blocks and compiles each one. ###
+
+    code = ""
+    code += compile(block) + ';' for block in blocks
+    code
+
+
+
+compile_suite = (src) ->
+    ### Compiles multiple line programs. ###
+
+    compile_blocks parse.blocks src
+
+
+
 window.compile = compile
+window.compile_suite = compile_suite
