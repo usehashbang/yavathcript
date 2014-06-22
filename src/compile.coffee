@@ -10,15 +10,13 @@ define = (src) ->
 
     suite = parse.blocks(src)
     args = suite.splice(0, 1).pop()
-    suite_last = suite.pop()
 
     if parse.is_function(src)
         params = parse.blocks(util.clean_up(args))
-        text = "function " + parse.func_and_args(params) + " {\n"
-        text += compile_blocks suite
-        text + 'return ' + compile(suite_last) + ";\n}\n"
+        text = "function " + parse.func_and_args(params) + ' {\n'
+        text + compile_blocks_with_return(suite) + '}\n'
     else
-        "var " + blocks[0] + " = " + compile(suite) + ";\n";
+        'var ' + blocks[0] + ' = ' + compile(suite) + ';\n';
 
 
 
