@@ -68,15 +68,15 @@ cond = (src) ->
     blocks = parse.blocks(src.trim())
     text = "(function() {\n";
 
-    for x in blocks
-        [pred, suite] = parse.blocks(util.clean_up(x))
-        text = text + "    "
-        if x != blocks[0]
+    for block in blocks
+        suite = parse.blocks util.clean_up block
+        pred = suite.splice(0, 1).pop()
+        unless block == blocks[0]
             text = text + "} else "
-        if pred != "else" and pred != "#t"
+        unless pred in ["else", "#t"]
             text = text + "if (" + compile(pred) + ") "
-        text = text + "{\n        return " + compile(suite) + ";\n"
-    text + "    }\n})()"
+        text += "{\n" + compile_blocks_with_return(suite)
+    text + "}\n})()"
 
 
 
