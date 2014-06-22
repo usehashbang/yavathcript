@@ -187,6 +187,14 @@ compile = (src) ->
 
 
 
+compile_blocks_with_return = (blocks) ->
+    ### Compiles a list of functions, with a return statement on the last. ###
+
+    last_block = blocks.pop()
+    compile_blocks(blocks) + 'return ' + compile(last_block) + ';\n'
+
+
+
 compile_blocks = (blocks) ->
     ### Takes a list of blocks and compiles each one. ###
 
