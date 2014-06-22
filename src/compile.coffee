@@ -93,29 +93,28 @@ lambda = (src) ->
 
 
 let_statement = (src, star) ->
-    ### Takes '(x a) (suite)' and gives the result of compile applied to
+    ### Takes '((x a)) (suite)' and gives the result of compile applied to
         '((lambda (x) (suite)) a)'. ###
 
-    [blocks, text_1, text_2, text_3] = [parse.blocks(src.trim()), 'var ', '', '']
-    blocks[0] = util.strip_outer_parentheses(blocks[0].trim()) if util.count_leading_parentheses(blocks[0]) == 2
-    [bindings, suite, i, temp_var] = [parse.blocks(blocks[0]), blocks[1], 0, 'temp']
+    suite = util.clean_up parse.blocks src
+    bindings = parse.blocks blocks.splice 0, 1
+    [code_1, code_2, code_3, i, temp_var] = ['var ', '', '', 0, 'temp']
 
     for bind in bindings
-        is_last = (bind == util.last(bindings))
+        is_last = bind == util.last bindings
         [x, a] = parse.blocks(util.strip_outer_parentheses(bind.trim()))
-        text_1 += x + if is_last then ';\n' else ', '
+        code_1 += x + if is_last then ';\n' else ', '
         if star
-            text_3 += x + ' = ' + compile(a) + ';\n'
+            code_3 += x + ' = ' + compile(a) + ';\n'
         else
-            text_2 += compile(a) + if is_last then '];\n' else ', '
-            text_3 += x + ' = !@#$%[' + i + if is_last then '];\n' else '], '
+            code_2 += compile(a) + if is_last then '];\n' else ', '
+            code_3 += x + ' = !@#$%[' + i + if is_last then '];\n' else '], '
         i += 1
         temp_var = '_' + temp_var while x.indexOf(temp_var) != -1
 
-    suite = blocks[1]
-    text_2 = 'var ' + temp_var + ' = [' + text_2 if not star
-    text_3 = util.replace_all(text_3, '!@#$%', temp_var)
-    parse.anon_wrap(text_1 + text_2 + text_3 + 'return ' + compile(suite))
+    code_2 = 'var ' + temp_var + ' = [' + code_2 if not star
+    code_3 = util.replace_all(code_3, '!@#$%', temp_var)
+    parse.anon_wrap(code_1 + code_2 + code_3 + 'return ' + compile(suite))
 
 
 
