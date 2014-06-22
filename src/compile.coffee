@@ -197,7 +197,7 @@ compile_blocks = (blocks) ->
     ### Takes a list of blocks and compiles each one. ###
 
     code = ""
-    code += compile(block) + ';' for block in blocks
+    code += util.add_semicolon(compile block) for block in blocks
     code
 
 
