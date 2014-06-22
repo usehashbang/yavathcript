@@ -8,13 +8,15 @@ define = (src) ->
     ### Takes "(define (f x_1 ... x_n) (stuffs))" and gives "function f(x_1, ..., x_n)
         { return stuffs; }", or takes "(define x 3)" and gives "var x = 3;". ###
 
-    blocks = parse.blocks(src)
-    suite = blocks[1].trim()
+    suite = parse.blocks(src)
+    args = suite.splice(0, 1).pop()
+    suite_last = suite.pop()
 
     if parse.is_function(src)
-        params = parse.blocks(util.clean_up(blocks[0]))
+        params = parse.blocks(util.clean_up(args))
         text = "function " + parse.func_and_args(params) + " {\n"
-        text + 'return ' + compile(suite) + ";\n}\n"
+        text += compile_blocks suite
+        text + 'return ' + compile(suite_last) + ";\n}\n"
     else
         "var " + blocks[0] + " = " + compile(suite) + ";\n";
 
