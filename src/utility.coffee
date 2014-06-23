@@ -4,25 +4,28 @@
 
 strip_between = (str, L, R) ->
     ### Removes anything in str contained between an L and an R. ###
-    i = str.indexOf(L)
-    j = (str.substring(i + 1)).indexOf(R)
-    if (i == -1 or j == -1)
+    i = str.indexOf L
+    j = (str.substring(i + 1)).indexOf R
+    if i == -1 or j == -1
         str
     else
-        strip_between(str.substring(0, i) + str.substring(i + j + 2), L, R)
+        strip_between str.substring(0, i) + str.substring(i + j + 2), L, R
 
 strip_outer_parentheses = (str) ->
     ### Your classes "(asdf)" to "asdf" function. Works like a charm. ###
-    if (str.substring(0, 1) != "(" or parse.find_end(str) != (str.length - 1)) then str else str.substring(1, str.length - 1)
+    if (str.substring(0, 1) != "(" or parse.find_end(str) != (str.length - 1))
+        str
+    else
+        str.substring 1, str.length - 1
 
 replace_all = (str, from, to) ->
     ### Replaces all instances of 'from' with 'to'. ###
-    str = str.replace(from, to) while str.indexOf(from) != -1
+    str = str.replace(from, to) until str.indexOf(from) == -1
     str
 
 clean_up = (str) ->
     ### Removes outer parentheses, outer whitespace, and trims inner whitespace. ###
-    (strip_outer_parentheses(str.trim())).trim()
+    (strip_outer_parentheses str.trim()).trim()
 
 count_leading_parentheses = (str) ->
     ### Counts the number of '(' that occur before a non-whitespace , non '('

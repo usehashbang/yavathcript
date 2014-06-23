@@ -9,9 +9,9 @@ parenthesis_iter = (str, level, index) ->
         and returns a list of the form [level \pm 1, new_index].  Here \pm 1 is
         1 if the the first parenthesis is an opener, and -1 if it is a closer. ###
 
-    str = str.substring(index)
+    str = str.substring index
     [i, j] = [str.indexOf("("), str.indexOf(")")]
-    if (i < j and i != -1) then [level + 1, index + i] else [level - 1, index + j]
+    if i < j and i != -1 then [level + 1, index + i] else [level - 1, index + j]
 
 
 
@@ -27,7 +27,7 @@ find_end = (str) ->
     else
         [level, index] = [1, 0]
         while level != 0
-            [level, index] = parenthesis_iter(str, level, index + 1)
+            [level, index] = parenthesis_iter str, level, index + 1
         index
 
 
@@ -35,9 +35,9 @@ find_end = (str) ->
 blocks = (src) ->
     ### E.g., takes "(a) b ... (c)" and returns ['(a)', 'b', ..., '(c)']. ###
 
-    i = find_end(src)
+    i = find_end src
     L = [src.substring(0, i + 1).trim()]
-    if i == -1 then [] else L.concat(blocks(src.substring(i + 1).trim()))
+    if i == -1 then [] else L.concat blocks src.substring(i + 1).trim()
 
 
 
@@ -45,7 +45,7 @@ arg_list_verb = (args) ->
     ### Takes something like ['x_1', ..., 'x_n'] and gives "(x_1, ..., x_n)." ###
 
     lastarg = if args.length > 0 then args[args.length - 1] else ''
-    innerargs = args.splice(0, args.length - 1)
+    innerargs = args.splice 0, args.length - 1
     text = "("
     for x in innerargs
         text = text + x + ", "
@@ -54,14 +54,14 @@ arg_list_verb = (args) ->
 arg_list = (args) ->
     ### Takes something like ['x_1', ..., 'x_n'] and gives "(x_1, ..., x_n)". ###
 
-    arg_list_verb(compile(x) for x in args)
+    arg_list_verb(compile x for x in args)
 
 
 
 func_and_args = (args) ->
     ### Takes something like ['f', 'x_1', ..., 'x_n'] and gives "f(x_1, ..., x_n)". ###
-    args[0] = ('(' + compile(args[0]) + ')') if is_function(args[0])
-    args[0] + arg_list(args.splice(1, args.length - 1))
+    args[0] = ('(' + compile(args[0]) + ')') if is_function args[0]
+    args[0] + arg_list args.splice 1, args.length - 1
 
 
 
@@ -70,16 +70,16 @@ separate = (src) ->
     ### Determines whether the case is (a b c) or ((a) (b) (c)), returning ['a b c']
         in the former case, and ['(a)', '(b)', '(c)'] in the latter. ###
     src = src.trim()
-    switch util.count_leading_parentheses(src)
+    switch util.count_leading_parentheses src
         when 0 then ['(' + src + ')']
         when 1 then [src]
-        else blocks(util.strip_outer_parentheses(src))
+        else blocks util.strip_outer_parentheses src
 
 
 
 is_function = (str) ->
     ### Simply returns true if the first character is a parenthesis. ###
-    str.substring(0, 1) == "("
+    str.trim().substring(0, 1) == "("
 
 
 

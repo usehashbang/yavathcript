@@ -8,13 +8,12 @@ define = (src) ->
     ### Takes "(define (f x_1 ... x_n) (stuffs))" and gives "function f(x_1, ..., x_n)
         { return stuffs; }", or takes "(define x 3)" and gives "var x = 3;". ###
 
-    suite = parse.blocks(src)
+    suite = parse.blocks src
     args = suite.splice(0, 1).pop()
 
-    if parse.is_function(src)
-        params = parse.blocks(util.clean_up(args))
-        text = "function " + parse.func_and_args(params) + ' {\n'
-        text + compile_blocks_with_return(suite) + '}\n'
+    if parse.is_function src
+        params = parse.blocks util.clean_up args
+        "function " + parse.func_and_args(params) + ' {\n' + compile_blocks_with_return(suite) + '}\n'
     else
         'var ' + blocks[0] + ' = ' + compile(suite) + ';\n';
 
@@ -22,19 +21,19 @@ define = (src) ->
 
 call = (src) ->
     ### Takes something like "(f x_1 ... x_n)". ###
-    parse.func_and_args(parse.blocks(util.clean_up(src)))
+    parse.func_and_args parse.blocks util.clean_up src
 
 
 
 arith = (op, args) ->
     ### Handles the case of (* x_1 ... x_n), etc. ###
 
-    args = parse.blocks(args)
+    args = parse.blocks args
     lastarg = args[args.length - 1]
     text = '('
 
     for arg in args.splice(0, args.length - 1)
-        text = text + compile(arg) + ' ' + op + ' '
+        text += compile(arg) + ' ' + op + ' '
 
     text + compile(lastarg) + ')'
 
@@ -43,20 +42,21 @@ arith = (op, args) ->
 compare = (op, args) ->
     ### Turns '(<= x_1 ... x_n)' into '(x_1 <= x_2) && ... && (x_{n-1} <= x_n)'. ###
 
-    blocks = parse.blocks(args.trim())
+    blocks = parse.blocks args.trim()
     if blocks.length > 2
         text = '(and '
-        text += '(' + op + ' ' + blocks[i] + ' ' + blocks[i + 1] + ') ' for i in [0 .. (blocks.length - 2)]
-        compile(text + ')')
+        for i in [0 .. (blocks.length - 2)]
+            text += '(' + op + ' ' + blocks[i] + ' ' + blocks[i + 1] + ') '
+        compile text + ')'
     else
-        arith(op, args)
+        arith op, args
 
 
 
 if_statement = (src) ->
     ### Takes '(if x y z)' and gives 'x? y : z'. ###
 
-    blocks = parse.blocks(src.trim())
+    blocks = parse.blocks src.trim()
     "(" + compile(blocks[0]) + "? " + compile(blocks[1]) + " : " + compile(blocks[2]) + ")"
 
 
@@ -65,7 +65,7 @@ cond = (src) ->
     ### Takes '(cond (a b) ... (c d))' and gives an equivalent if/else,
         wrapped in an anonymous function. ###
 
-    blocks = parse.blocks(src.trim())
+    blocks = parse.blocks src.trim()
     text = "(function() {\n";
 
     for block in blocks
@@ -84,10 +84,10 @@ lambda = (src) ->
     ### Takes '(x ... z) (suite)' and gives a lambda, i.e. anonymous js
         function 'function(x, ..., z) { compile(suite); }'. ###
 
-    blocks = parse.blocks(src.trim())
-    args = parse.blocks(util.strip_outer_parentheses(blocks[0].trim()))
+    blocks = parse.blocks src.trim()
+    args = parse.blocks util.clean_up blocks[0]
     suite = blocks[1].trim()
-    args.splice(0, 0, 'function')
+    args.splice 0, 0, 'function'
     parse.func_and_args(args) + ' {\nreturn ' + compile(suite) + ';\n}\n'
 
 
@@ -102,7 +102,7 @@ let_statement = (src, star) ->
 
     for bind in bindings
         is_last = bind == util.last bindings
-        [x, a] = parse.blocks(util.strip_outer_parentheses(bind.trim()))
+        [x, a] = parse.blocks util.strip_outer_parentheses bind.trim()
         code_1 += x + if is_last then ';\n' else ', '
         if star
             code_3 += x + ' = ' + compile(a) + ';\n'
@@ -121,25 +121,25 @@ let_statement = (src, star) ->
 set_statement = (src) ->
     ### Takes '(x a)' and gives 'x = a'. ###
 
-    blocks = parse.blocks(src.trim())
-    blocks[0] + ' = ' + compile(blocks[1].trim())
+    blocks = parse.blocks src.trim()
+    blocks[0] + ' = ' + compile blocks[1].trim()
 
 
 
 do_loop = (src) ->
     ### It's complicated... ###
 
-    [bindings, clause, suite] = parse.blocks(src.trim())
+    [bindings, clause, suite] = parse.blocks src.trim()
     [bindings, init, update] = [parse.blocks(util.clean_up(bindings)), [], []]
 
-    y = parse.separate(clause.trim())
-    y.push('undefined')
+    y = parse.separate clause.trim()
+    y.push 'undefined'
     [test, return_expression] = [y[0], y[1]]
 
     for x in bindings
-        [name, value, step] = parse.blocks(util.clean_up(x))
-        init.push(name + ' = ' + compile(value))
-        update.push(name + ' = ' + compile(step))
+        [name, value, step] = parse.blocks util.clean_up x
+        init.push name + ' = ' + compile value
+        update.push name + ' = ' + compile step
 
     init[0] = 'var ' + init[0]
     text = "for(" + util.strip_outer_parentheses(parse.arg_list_verb(init)) + "; "
@@ -147,7 +147,7 @@ do_loop = (src) ->
     text += util.strip_outer_parentheses(parse.arg_list_verb(update)) + ") {\n"
     text += compile(suite) + "}\nreturn " + compile(return_expression) + ";\n"
 
-    parse.anon_wrap(text)
+    parse.anon_wrap text
 
 
 
@@ -156,8 +156,8 @@ do_loop = (src) ->
 compile = (src) ->
     ### The main compiling function. ###
 
-    src = util.clean_up(src)                                                    # remove parentheses and whitespace
-    n = parse.find_end(src)                                                     # find the end of the first block
+    src = util.clean_up src                                                     # remove parentheses and whitespace
+    n = parse.find_end src                                                      # find the end of the first block
 
     if n == src.length - 1                                                      # src is a literal
         switch src
@@ -167,20 +167,20 @@ compile = (src) ->
     else                                                                        # src is a function
         [first, rest] = [src.substring(0,n+1), src.substring(n+1).trim()]
         switch first
-            when "define" then define(rest)
-            when "*", "+", "-" then arith(first, rest)
-            when "and" then arith('&&', rest)
-            when "or" then arith('||', rest)
-            when "<", ">", ">=", "<=" then compare(first, rest)
-            when "=", "==" then compare("==", rest)
-            when "if" then if_statement(rest)
-            when "cond" then cond(rest)
-            when "lambda" then lambda(rest)
-            when "let" then let_statement(rest, false)
-            when "let*" then let_statement(rest, true)
-            when "set!" then set_statement(rest)
-            when "do" then do_loop(rest)
-            else call(src)
+            when "define" then define rest
+            when "*", "+", "-" then arith first, rest
+            when "and" then arith '&&', rest
+            when "or" then arith '||', rest
+            when "<", ">", ">=", "<=" then compare first, rest
+            when "=", "==" then compare "==", rest
+            when "if" then if_statement rest
+            when "cond" then cond rest
+            when "lambda" then lambda rest
+            when "let" then let_statement rest, false
+            when "let*" then let_statement rest, true
+            when "set!" then set_statement rest
+            when "do" then do_loop rest
+            else call src
 
 
 
