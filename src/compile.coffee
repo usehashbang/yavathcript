@@ -137,6 +137,7 @@ define ['parse', 'utility'], (parse, utility) ->
                 when "*", "+", "-" then arith first, rest
                 when "and" then arith '&&', rest
                 when "or" then arith '||', rest
+                when "not" then '!' + compile rest
                 when "<", ">", ">=", "<=" then compare first, rest
                 when "=", "==" then compare "==", rest
                 when "if" then if_statement rest
