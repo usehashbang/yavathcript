@@ -3,7 +3,6 @@
 # note: functions for parsing scheme's maddening parenthetical glory.
 
 define ['utility'], (utility) ->
-    alert utility.find_end
     blocks = (src) ->
         # E.g., takes '(a) b ... (c)' and returns ['(a)', 'b', ..., '(c)']
         i = utility.find_end src

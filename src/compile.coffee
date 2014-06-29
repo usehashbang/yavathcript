@@ -11,7 +11,6 @@ define ['parse', 'utility'], (parse, utility) ->
         args = suite.splice(0, 1).pop()
         if parse.is_function src
             params = parse.blocks utility.clean_up args
-            alert func_and_args(params)
             "function " + func_and_args(params) + ' {\n' + compile_blocks_with_return(suite) + '}\n'
         else
             'var ' + blocks[0] + ' = ' + compile(suite) + ';\n';
