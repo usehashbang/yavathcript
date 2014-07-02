@@ -2,10 +2,12 @@
   "name": "yavathcript",
   "version": "0.0.1",
   "dependencies": {
+    "requirejs": "2.x"
   },
   "devDependencies": {
     "mocha": "*",
     "uglify-js": "2.x",
+    "underscore": "*",
     "less": "git://github.com/cloudhead/less.js"
   }
 }

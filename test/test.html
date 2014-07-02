@@ -2,9 +2,7 @@
 <head>
     <title>Test Compiler</title>
     <link rel="stylesheet" type="text/css" href="../css/style.css">
-    <script src="../build/utility.js"></script>
-    <script src="../build/parse.js"></script>
-    <script src="../build/compile.js"></script>
+    <script data-main="../build/main" src="../node_modules/requirejs/require.js"></script>
     <script>
         var scheme, js;
 
@@ -14,7 +12,7 @@
         }
 
         function go() {
-            js.value = window.compile_suite(scheme.value);
+            js.value = window.compile(scheme.value);
         }
 
     </script>

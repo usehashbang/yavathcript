@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#echo Installing node dependencies...
+#npm install
+echo Compiling Coffeescript...
+coffee -c -o build/ src/compile.coffee src/parse.coffee src/utility.coffee
+echo Copying main.js...
+cp src/main.js build/main.js
+echo Build complete.
