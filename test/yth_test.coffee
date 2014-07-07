@@ -56,7 +56,7 @@ describe 'define/call', ->
         js = compile scheme
         assert run(js) == 1234, 'Error: \"' + scheme + '\" != \"' + js + '\"'
     it 'identity function', ->
-        for x in ["'a'", 3.14159, '#t']
+        for x in ["'a'", 3.14159, '#t', "'imma computer'"]
             scheme = '(define (f x) x) (f ' + x + ')'
             js = compile scheme
             assert run(js) == trans_lit(x), 'Error: \"' + scheme + '\" != \"' + js + '\" at ' + x
