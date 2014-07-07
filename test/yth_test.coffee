@@ -26,6 +26,13 @@ describe 'infix operation', ->
                 'or' : (x, y, z) -> transl_bool(x) or transl_bool(y) or transl_bool(z)
                 'and' : (x, y, z) -> transl_bool(x) and transl_bool(y) and transl_bool(z)
             vals: ['#t', '#f']
+        'comparative':
+            ops :
+                '<=' : (x, y, z) -> x <= y and y <= z
+                '>=' : (x, y, z) -> x >= y and y >= z
+                '<' : (x, y, z) -> x < y and y < z
+                '>' : (x, y, z) -> x > y and y > z
+            vals: [-10, 0, 2.4]
     _.each _.keys(data), (op_type) ->
         tuples = helpers.cartesian_power data[op_type].vals, 3
         describe op_type, ->
