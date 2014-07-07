@@ -42,4 +42,10 @@ describe 'infix operation', ->
                         [m, n, k] = tuple
                         scheme = '(' + op + ' ' + n + ' ' + m + ' ' + k + ')'
                         js = compile scheme
-                        assert data[op_type].ops[op](n, m, k) == run js, 'Error: \"' + scheme + '\" != \"' + js + '\" at ' + tuple
+                        assert data[op_type].ops[op](n, m, k) == run(js), 'Error: \"' + scheme + '\" != \"' + js + '\" at ' + tuple
+
+describe 'define/call', ->
+    it 'constant function with no arguments', ->
+        scheme = '(define (f) 1234) (f)'
+        js = compile scheme
+        assert run(js) == 1234, 'Error: \"' + scheme + '\" != \"' + js + '\"'
