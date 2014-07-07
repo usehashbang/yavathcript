@@ -123,9 +123,10 @@ define ['parse', 'utility'], (parse, utility) ->
 
     compile = (src) ->
         # The main compiling function.
+        is_func = parse.is_function src
         src = utility.clean_up src
         n = utility.find_end src
-        if n == src.length - 1
+        if n == src.length - 1 and not is_func
             switch src
                 when "#t" then "true"
                 when "#f" then "false"
