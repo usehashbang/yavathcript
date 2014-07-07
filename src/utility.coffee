@@ -52,6 +52,11 @@ define [], ->
         str = str.replace(from, to) until str.indexOf(from) == -1
         str
 
+    replace_all_plural = (str, froms, to) ->
+        # Replaces all instances of each element of 'froms' with 'to'.
+        str = replace_all(str, from, to) for from in froms
+        str
+
     clean_up = (str) ->
         # Removes outer parentheses, outer whitespace, and trims inner whitespace.
         (strip_outer_parentheses str.trim()).trim()
@@ -79,6 +84,7 @@ define [], ->
         strip_between : strip_between
         strip_outer_parentheses : strip_outer_parentheses
         replace_all : replace_all
+        replace_all_plural : replace_all_plural
         clean_up : clean_up
         count_leading_parentheses : count_leading_parentheses
         last : last
