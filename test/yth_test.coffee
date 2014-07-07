@@ -8,12 +8,18 @@ requirejs.config
     baseUrl : __dirname + '/../build/'
 
 compile = requirejs 'compile'
+utility = requirejs 'utility'
 helpers = requirejs '../test/helpers'
 run = vm.runInThisContext
 
+trans_lit = (val) ->
+    switch val
+        when '#t' then true
+        when '#f' then false
+        else
+            if _.isString(val) then utility.replace_all(val, "'", "") else val
 
 describe 'infix operation', ->
-    transl_bool = (val) -> if val == '#t' then true else false
     data =
         'arithmetic':
             ops :
@@ -23,8 +29,8 @@ describe 'infix operation', ->
             vals : [-115631, -100, 3, 14, 57, 256, 9999]
         'boolean':
             ops :
-                'or' : (x, y, z) -> transl_bool(x) or transl_bool(y) or transl_bool(z)
-                'and' : (x, y, z) -> transl_bool(x) and transl_bool(y) and transl_bool(z)
+                'or' : (x, y, z) -> trans_lit(x) or trans_lit(y) or trans_lit(z)
+                'and' : (x, y, z) -> trans_lit(x) and trans_lit(y) and trans_lit(z)
             vals: ['#t', '#f']
         'comparative':
             ops :
@@ -49,3 +55,8 @@ describe 'define/call', ->
         scheme = '(define (f) 1234) (f)'
         js = compile scheme
         assert run(js) == 1234, 'Error: \"' + scheme + '\" != \"' + js + '\"'
+    it 'identity function', ->
+        for x in ["'a'", 3.14159, '#t']
+            scheme = '(define (f x) x) (f ' + x + ')'
+            js = compile scheme
+            assert run(js) == trans_lit(x), 'Error: \"' + scheme + '\" != \"' + js + '\" at ' + x
