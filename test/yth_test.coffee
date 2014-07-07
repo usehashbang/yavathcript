@@ -17,7 +17,7 @@ trans_lit = (val) ->
         when '#t' then true
         when '#f' then false
         else
-            if _.isString(val) then utility.replace_all(val, "'", "") else val
+            if _.isString(val) then utility.replace_all_plural(val, ["'", "\""], "") else val
 
 describe 'infix operation', ->
     data =
@@ -56,7 +56,7 @@ describe 'define/call', ->
         js = compile scheme
         assert run(js) == 1234, 'Error: \"' + scheme + '\" != \"' + js + '\"'
     it 'identity function', ->
-        for x in ["'a'", 3.14159, '#t', "'imma computer'"]
+        for x in ["'a'", 3.14159, '#t', "'imma computer'", "\"isnt it grand?\""]
             scheme = '(define (f x) x) (f ' + x + ')'
             js = compile scheme
             assert run(js) == trans_lit(x), 'Error: \"' + scheme + '\" != \"' + js + '\" at ' + x
