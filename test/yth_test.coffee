@@ -19,6 +19,8 @@ trans_lit = (val) ->
         else
             if _.isString(val) then utility.replace_all_plural(val, ["'", "\""], "") else val
 
+err_string = (scheme, js, more="") -> "Error: '#{scheme}' != '#{js}' " + more
+
 describe 'infix operation', ->
     data =
         'arithmetic':
@@ -48,15 +50,19 @@ describe 'infix operation', ->
                         [m, n, k] = tuple
                         scheme = '(' + op + ' ' + n + ' ' + m + ' ' + k + ')'
                         js = compile scheme
-                        assert data[op_type].ops[op](n, m, k) == run(js), 'Error: \"' + scheme + '\" != \"' + js + '\" at ' + tuple
+                        assert data[op_type].ops[op](n, m, k) == run(js), err_string(scheme, js, "at #{tuple}")
 
 describe 'define/call', ->
+    it 'a JavaScript var', ->
+        scheme = '(define x 3456) x'
+        js = compile scheme
+        assert run(js) == 3456, err_string(scheme, js)
     it 'constant function with no arguments', ->
         scheme = '(define (f) 1234) (f)'
         js = compile scheme
-        assert run(js) == 1234, 'Error: \"' + scheme + '\" != \"' + js + '\"'
+        assert run(js) == 1234, err_string(scheme, js)
     it 'identity function', ->
         for x in ["'a'", 3.14159, '#t', "'imma computer'", "\"isnt it grand?\""]
-            scheme = '(define (f x) x) (f ' + x + ')'
+            scheme = "(define (f x) x) (f #{x})"
             js = compile scheme
-            assert run(js) == trans_lit(x), 'Error: \"' + scheme + '\" != \"' + js + '\" at ' + x
+            assert run(js) == trans_lit(x), err_string(scheme, js, "at #{x}")
