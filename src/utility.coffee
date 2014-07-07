@@ -5,19 +5,23 @@
 define [], ->
 
     find_end = (str) ->
-        # The first character of str should not be whitespace, and str should have
-        # at least one character in it.  If str begins with a parenthesis, returns
-        # the location of the closing parenthesis.  If not, it returns the last
-        # index before the first whitespace character.
-
-        #src = util.strip_between(util.strip_between(str, "\"", "\""), "'", "'")
-        if str.substring(0, 1) != '('
+        # The first character of str should not be whitespace, and str should
+        # have at least one character in it.  If str begins with a parenthesis,
+        # returns the location of the closing parenthesis.  If str begins with a
+        # quotation mark, returns the location of the closing quotation mark.
+        # Otherwise, returns the last index before the first whitespace
+        # character.
+        first_char = str.substring 0, 1
+        if first_char not in ["(", "\"", "'"]
             (str + ' ').indexOf(' ') - 1
-        else
+        else if first_char == "("
+            #src = util.strip_between(util.strip_between(str, "\"", "\""), "'", "'")
             [level, index] = [1, 0]
             while level != 0
                 [level, index] = parenthesis_iter str, level, index + 1
             index
+        else
+            str.substring(1).indexOf(first_char) + 1
 
     parenthesis_iter = (str, level, index) ->
         # Finds index of the first instance of '(' or ')', whichever comes first,
