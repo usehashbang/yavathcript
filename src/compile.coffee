@@ -9,11 +9,11 @@ define ['parse', 'utility'], (parse, utility) ->
         # x_n) { return stuffs; }`, or takes `(define x 3)` and gives `var x = 3;`.
         suite = parse.blocks src
         args = suite.splice(0, 1).pop()
-        if parse.is_function src
+        if parse.is_function args
             params = parse.blocks utility.clean_up args
             "function " + func_and_args(params) + ' {\n' + compile_blocks_with_return(suite) + '}\n'
         else
-            'var ' + blocks[0] + ' = ' + compile(suite) + ';\n';
+            'var ' + args + ' = ' + compile(suite[0]) + ';\n';
 
     call = (src) ->
         # Takes something like `(f x_1 ... x_n)`.
@@ -123,9 +123,10 @@ define ['parse', 'utility'], (parse, utility) ->
 
     compile = (src) ->
         # The main compiling function.
+        is_func = parse.is_function src
         src = utility.clean_up src
         n = utility.find_end src
-        if n == src.length - 1
+        if n == src.length - 1 and not is_func
             switch src
                 when "#t" then "true"
                 when "#f" then "false"

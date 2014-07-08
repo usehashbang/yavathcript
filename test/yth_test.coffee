@@ -8,44 +8,61 @@ requirejs.config
     baseUrl : __dirname + '/../build/'
 
 compile = requirejs 'compile'
+utility = requirejs 'utility'
 helpers = requirejs '../test/helpers'
 run = vm.runInThisContext
 
+trans_lit = (val) ->
+    switch val
+        when '#t' then true
+        when '#f' then false
+        else
+            if _.isString(val) then utility.replace_all_plural(val, ["'", "\""], "") else val
+
+err_string = (scheme, js, more="") -> "Error: '#{scheme}' != '#{js}' " + more
 
 describe 'infix operation', ->
-    describe 'arithmetic', ->
-        ops =
-            '+' : (x, y, z) -> x + y + z
-            '*' : (x, y ,z) -> x * y * z
-            '-' : (x, y, z) -> x - y - z
-        numbers = [-115631, -100, 3, 14, 57, 256, 9999]
-        _.each _.keys(ops), (op) ->
+    data =
+        'arithmetic':
+            ops :
+                '+' : (x, y, z) -> x + y + z
+                '*' : (x, y ,z) -> x * y * z
+                '-' : (x, y, z) -> x - y - z
+            vals : [-115631, -100, 3, 14, 57, 256, 9999]
+        'boolean':
+            ops :
+                'or' : (x, y, z) -> trans_lit(x) or trans_lit(y) or trans_lit(z)
+                'and' : (x, y, z) -> trans_lit(x) and trans_lit(y) and trans_lit(z)
+            vals: ['#t', '#f']
+        'comparative':
+            ops :
+                '<=' : (x, y, z) -> x <= y and y <= z
+                '>=' : (x, y, z) -> x >= y and y >= z
+                '<' : (x, y, z) -> x < y and y < z
+                '>' : (x, y, z) -> x > y and y > z
+            vals: [-10, 0, 2.4]
+    _.each _.keys(data), (op_type) ->
+        tuples = helpers.cartesian_power data[op_type].vals, 3
+        describe op_type, ->
+            _.each _.keys(data[op_type].ops), (op) ->
+                it op, ->
+                    for tuple in tuples
+                        [m, n, k] = tuple
+                        scheme = '(' + op + ' ' + n + ' ' + m + ' ' + k + ')'
+                        js = compile scheme
+                        assert data[op_type].ops[op](n, m, k) == run(js), err_string(scheme, js, "at #{tuple}")
 
-            it op, ->
-                for tuple in helpers.cartesian_power numbers, 3
-                    [m, n, k] = tuple
-                    scheme = '(' + op + ' ' + n + ' ' + m + ' ' + k + ')'
-                    js = compile scheme
-                    unless ops[op](n, m, k) == run js
-                        assert false, 'Error: \"' + scheme + '\" != \"' + js + '\" at ' + tuple
-
-    describe 'boolean', ->
-        perf =
-            'a' : (x, y, z, u, v, w) -> (x and (y or (z and not u))) or (v and w)
-            'b' : (x, y, z, u, v, w) -> (x or not y) and (u or not v) and (z or not w)
-            'c' : (x, y, z, u, v, w) -> (x and y and z) or not (u and v and w)
-        schemes =
-            'a' : (x, y, z, u, v, w) -> '(or (and '+x+' (or '+y+' (and '+z+' (not '+u+')))) (and '+v+' '+w+'))'
-            'b' : (x, y, z, u, v, w) -> '(and (or '+x+' (not '+y+')) (or '+u+' (not '+v+')) (or '+z+' (not '+w+')))'
-            'c' : (x, y, z, u, v, w) -> '(or (and '+x+' '+y+' '+z+') (not (and '+u+' '+v+' '+w+')))'
-        _.each _.keys(perf), (i) ->
-
-            it 'test sentence ' + schemes[i]('x', 'y', 'z', 'u', 'v', 'w'), ->
-                for tuple in helpers.cartesian_power ['#t', '#f'], 6
-                    [x, y, z, u, v, w] = tuple
-                    [X, Y, Z, U, V, W] = helpers.mapping tuple, (x) ->
-                        if x == '#t' then true else false
-                    scheme = schemes[i](x, y, z, u, v, w)
-                    js = compile scheme
-                    unless !perf[i](X, Y, Z, U, V, W) == !run(js)
-                        assert false, 'Error: \"' + scheme + '\" != \"' + js + '\"'
+describe 'define/call', ->
+    it 'a JavaScript var', ->
+        scheme = '(define x 3456) x'
+        js = compile scheme
+        assert run(js) == 3456, err_string(scheme, js)
+    it 'constant function with no arguments', ->
+        scheme = '(define (f) 1234) (f)'
+        js = compile scheme
+        assert run(js) == 1234, err_string(scheme, js)
+    it 'identity function', ->
+        for x in ["'a'", 3.14159, '#t', "'imma computer'", "\"isnt it grand?\""]
+            scheme = "(define (f x) x) (f #{x})"
+            js = compile scheme
+            assert run(js) == trans_lit(x), err_string(scheme, js, "at #{x}")
