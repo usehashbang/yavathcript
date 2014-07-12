@@ -42,7 +42,9 @@ define ['parse', 'utility'], (parse, utility) ->
     if_statement = (src) ->
         # Takes `(if x y z)` and gives `x? y : z`.
         blocks = parse.blocks src.trim()
-        "(" + compile(blocks[0]) + "? " + compile(blocks[1]) + " : " + compile(blocks[2]) + ")"
+        text = "(" + compile(blocks[0]) + "? " + compile(blocks[1])
+        text += " : " + compile(blocks[2]) if blocks.length == 3
+        text + ")"
 
     arg_list = (args) ->
         # Takes something like ['x_1', ..., 'x_n'] and gives '(x_1, ..., x_n)'.
